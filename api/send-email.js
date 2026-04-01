@@ -1,14 +1,14 @@
 module.exports = async function handler(req, res) {
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed' })
-    }
-  
-    const { email } = req.body
-  
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' })
-    }
-  
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const { email } = req.body
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' })
+  }
+
+  try {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -29,10 +29,16 @@ module.exports = async function handler(req, res) {
         `,
       }),
     })
-  
+
     if (!response.ok) {
+      const err = await response.text()
+      console.error('Resend error:', err)
       return res.status(500).json({ error: 'Failed to send email' })
     }
-  
+
     return res.status(200).json({ ok: true })
+  } catch (err) {
+    console.error('send-email handler error:', err)
+    return res.status(500).json({ error: 'Internal server error' })
   }
+}

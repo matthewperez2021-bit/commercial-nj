@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-)
+import { Link, useNavigate } from 'react-router-dom'
+import supabase from './lib/supabase'
 
 const IMAGES = [
   'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&q=85&fit=crop',
@@ -15,10 +11,29 @@ const IMAGES = [
 ]
 
 export default function LandingPage() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [currentImage, setCurrentImage] = useState(0)
+  const [showGate, setShowGate] = useState(false)
+  const [pwInput, setPwInput] = useState('')
+  const [pwError, setPwError] = useState(false)
+
+  function handleListingsClick(e) {
+    e.preventDefault()
+    setShowGate(true)
+  }
+
+  function handleGateSubmit(e) {
+    e.preventDefault()
+    if (pwInput === import.meta.env.VITE_LISTINGS_PASSWORD) {
+      navigate('/listings')
+    } else {
+      setPwError(true)
+      setPwInput('')
+    }
+  }
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -67,14 +82,16 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="px-6 py-5 flex items-center justify-between max-w-6xl mx-auto w-full">
         <span className="text-xl font-bold tracking-tight text-white">
-          [AppName]
+          PROXAL
         </span>
-        <a
-          href="#waitlist"
-          className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
-        >
-          Get early access →
-        </a>
+        <div className="flex items-center gap-6">
+          <button onClick={handleListingsClick} className="text-sm font-medium text-gray-300 hover:text-white transition-colors bg-transparent border-none cursor-pointer p-0">
+            Browse listings →
+          </button>
+          <a href="#waitlist" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            Get early access →
+          </a>
+        </div>
       </nav>
 
       {/* Hero */}
@@ -237,8 +254,45 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="px-6 py-8 border-t border-gray-900 text-center text-gray-600 text-sm">
-        © {new Date().getFullYear()} [AppName]. Built to disrupt CoStar.
+        © {new Date().getFullYear()} PROXAL. Built to disrupt CoStar.
       </footer>
+
+      {/* Password modal */}
+      {showGate && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+          onClick={() => { setShowGate(false); setPwError(false); setPwInput('') }}
+        >
+          <div
+            className="bg-gray-900 border border-gray-800 rounded-2xl p-8 w-full max-w-sm mx-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-white font-bold text-lg mb-1">
+              PROXAL
+            </p>
+            <p className="text-gray-400 text-sm mb-6">Enter your access code to view listings</p>
+            <form onSubmit={handleGateSubmit}>
+              <input
+                type="password"
+                placeholder="Access code"
+                value={pwInput}
+                autoFocus
+                onChange={e => { setPwInput(e.target.value); setPwError(false) }}
+                className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 mb-3"
+                style={{ borderColor: pwError ? '#ef4444' : undefined }}
+              />
+              {pwError && <p className="text-red-400 text-sm mb-3">Incorrect access code</p>}
+              <button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition-colors"
+              >
+                Access listings
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
