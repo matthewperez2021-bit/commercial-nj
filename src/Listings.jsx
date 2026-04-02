@@ -54,6 +54,75 @@ function StatBox({ label, value, valueColor }) {
   )
 }
 
+function PropertyMap({ property: p }) {
+  const [coords, setCoords] = useState(
+    p.lat && p.lng ? { lat: p.lat, lng: p.lng } : null
+  )
+  const [mapError, setMapError] = useState(false)
+
+  useEffect(() => {
+    if (coords) return
+    const query = encodeURIComponent(`${p.address}, ${p.city}, ${p.state} ${p.zip}`)
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${query}`, {
+      headers: { 'Accept-Language': 'en' }
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data?.[0]) {
+          setCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) })
+        } else {
+          setMapError(true)
+        }
+      })
+      .catch(() => setMapError(true))
+  }, [p.address, p.city, p.state, p.zip, coords])
+
+  if (mapError) return null
+
+  if (!coords) return (
+    <div style={{ height: '220px', borderRadius: '12px', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '22px' }}>
+      <div style={{ textAlign: 'center', color: '#9ca3af' }}>
+        <div style={{ fontSize: '20px', marginBottom: '6px' }}>🗺️</div>
+        <div style={{ fontSize: '12px' }}>Loading map...</div>
+      </div>
+    </div>
+  )
+
+  const { lat, lng } = coords
+  const delta = 0.006
+  const embedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - delta},${lat - delta},${lng + delta},${lat + delta}&layer=mapnik&marker=${lat},${lng}`
+  const fullUrl  = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`
+
+  return (
+    <div style={{ marginBottom: '22px' }}>
+      <div style={{ fontSize: '11px', fontWeight: 700, color: '#9ca3af', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Location</div>
+      <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid #e5e7eb', position: 'relative' }}>
+        <iframe
+          src={embedUrl}
+          width="100%"
+          height="220"
+          style={{ border: 'none', display: 'block' }}
+          title="Property location"
+        />
+        <a
+          href={fullUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            position: 'absolute', bottom: '10px', right: '10px',
+            backgroundColor: '#fff', color: '#374151', fontSize: '11px',
+            fontWeight: 600, padding: '5px 10px', borderRadius: '6px',
+            textDecoration: 'none', boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+            border: '1px solid #e5e7eb',
+          }}
+        >
+          Open in Maps ↗
+        </a>
+      </div>
+    </div>
+  )
+}
+
 function DetailPanel({ property: p, onClose }) {
   const tc = TYPE_COLORS[p.type] ?? { bg: '#f3f4f6', text: '#374151' }
 
@@ -123,6 +192,9 @@ function DetailPanel({ property: p, onClose }) {
           <StatBox label="Year Built"  value={p.year_built} />
           <StatBox label="Zoning"      value={p.zoning} />
         </div>
+
+        {/* Map */}
+        <PropertyMap property={p} />
 
         {/* Description */}
         {p.description && (
