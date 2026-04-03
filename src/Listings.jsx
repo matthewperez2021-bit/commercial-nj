@@ -402,7 +402,7 @@ export default function Listings() {
             {selected && (
               <div className="detail-overlay" style={{
                 position: 'absolute', top: 0, right: 0,
-                width: '400px', height: '100%',
+                width: '440px', height: '100%',
                 backgroundColor: '#fff',
                 boxShadow: '-6px 0 32px rgba(0,0,0,0.18)',
                 zIndex: 1000, overflow: 'hidden',
